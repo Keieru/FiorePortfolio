@@ -5,6 +5,7 @@ import {
   kicker,
   sectionContainer,
   sectionHeading,
+  sectionHeading2,
   btnPrimary,
   btnPrimaryNav,
   btnPrimaryLg,
@@ -22,38 +23,38 @@ import {
 >
   <div class="w-full min-h-screen">
 
-    <nav class="sticky top-0 z-50 flex items-center gap-4 py-3 px-8 border-b border-divider bg-bg">
-      <div class="font-heading font-semibold text-[22px] mr-auto">Fiorella Ailen Litarelli</div>
-      <a href="#about" class="text-base no-underline text-text hover:text-accent">Sobre mí</a>
-      <a href="#approach" class="text-base no-underline text-text hover:text-accent">Enfoque</a>
-      <a href="#experience" class="text-base no-underline text-text hover:text-accent">Experiencia</a>
-      <a href="#credentials" class="text-base no-underline text-text hover:text-accent">Formación</a>
+    <nav class="sticky top-0 z-50 flex items-center gap-2 md:gap-4 py-3 px-4 md:px-8 border-b border-divider bg-bg">
+      <div class="font-heading font-semibold text-[16px] md:text-[22px] mr-auto">Fiorella Ailen Litarelli</div>
+      <a href="#about" class="hidden md:inline text-base no-underline text-text hover:text-accent">Sobre mí</a>
+      <a href="#approach" class="hidden md:inline text-base no-underline text-text hover:text-accent">Enfoque</a>
+      <a href="#experience" class="hidden md:inline text-base no-underline text-text hover:text-accent">Experiencia</a>
+      <a href="#credentials" class="hidden md:inline text-base no-underline text-text hover:text-accent">Formación</a>
       <a href="#contact" class={btnPrimaryNav}>Reservar sesión</a>
     </nav>
 
-    <div class="grid grid-cols-[1.1fr_0.9fr] gap-8 items-center max-w-[1180px] mx-auto px-8 pt-8 pb-[55.2px]">
+    <div class="grid grid-cols-1 md:grid-cols-[1.1fr_0.9fr] gap-6 md:gap-8 items-center max-w-[1180px] mx-auto px-4 md:px-8 pt-6 md:pt-8 pb-9 md:pb-[55.2px]">
       <div>
         <div class="font-heading text-xs font-semibold tracking-[0.08em] uppercase text-accent-800 mb-4">Psicóloga Colegiada M-45324 · Colegio Oficial de la Psicología de Madrid (COPM) · Orientación cognitivo-conductual</div>
-        <h1 class="font-heading font-semibold text-[48px] leading-[1.12] tracking-[-0.015em] mb-2">Un espacio tranquilo y seguro para trabajar lo que te pesa.</h1>
-        <p class="text-[18px] leading-[1.7] max-w-[46ch] opacity-[0.85]">Acompañamiento psicológico individual desde un enfoque cognitivo-conductual, especializado en trastornos del estado de ánimo, trastornos de la conducta alimentaria (TCA), TEA y personas adultas mayores.</p>
-        <div class="flex gap-3 items-center mt-4 max-w-[46ch]">
+        <h1 class="font-heading font-semibold text-[32px] md:text-[48px] leading-[1.12] tracking-[-0.015em] mb-2">Un espacio tranquilo y seguro para trabajar lo que te pesa.</h1>
+        <p class="text-[16px] md:text-[18px] leading-[1.7] max-w-[46ch] opacity-[0.85]">Acompañamiento psicológico individual desde un enfoque cognitivo-conductual, especializado en trastornos del estado de ánimo, trastornos de la conducta alimentaria (TCA), TEA y personas adultas mayores.</p>
+        <div class="flex flex-col sm:flex-row gap-3 sm:items-center mt-4 max-w-[46ch]">
           <a href="#contact" class={btnPrimaryLg}>Agendar una consulta</a>
           <a href="#about" class={btnGhostLg}>Conocer más sobre mí</a>
         </div>
       </div>
-      <div class="filter-[sepia(0.22)_saturate(0.82)_contrast(1.05)] box-border border-[6px] border-surface outline outline-divider flex items-center justify-center bg-surface w-full h-[460px]">
+      <div class="filter-[sepia(0.22)_saturate(0.82)_contrast(1.05)] box-border border-[6px] border-surface outline outline-divider flex items-center justify-center bg-surface w-full h-[300px] md:h-[460px]">
         <img src="/images/foto-fiore.jpg" alt="Foto de Fiorella Ailen Litarelli" class="w-full h-full object-cover" />
       </div>
     </div>
 
     <hr class={hr} />
 
-    <section id="about" class="max-w-[1000px] mx-auto py-[51.52px] px-8 grid grid-cols-[0.7fr_1.3fr] gap-6 scroll-mt-[84px]">
+    <section id="about" class="max-w-[1000px] mx-auto py-9 md:py-[51.52px] px-4 md:px-8 grid grid-cols-1 md:grid-cols-[0.7fr_1.3fr] gap-4 md:gap-6 scroll-mt-[84px]">
       <div>
         <div class={kicker}>Sobre mí</div>
-        <h2 class="font-heading font-semibold text-[32px] leading-[1.12] tracking-[-0.015em] mb-2">Conocer cómo trabajas es donde empieza el cuidado.</h2>
+        <h2 class={sectionHeading2}>Conocer cómo trabajas es donde empieza el cuidado.</h2>
       </div>
-      <div class="text-[16px] leading-[1.85] text-justify">
+      <div class="text-[16px] leading-[1.85] text-left md:text-justify">
         <p>Psicóloga con orientación cognitivo-conductual, especializada en acompañamiento psicológico individual a personas con trastornos del estado de ánimo, trastornos de la conducta alimentaria (TCA), TEA y personas adultas mayores. Mi experiencia personal como persona con dislexia complementa mi formación profesional, permitiéndome ofrecer una comprensión cercana y una atención sensible a las necesidades de las personas neurodivergentes.</p>
         <p class="text-left text-[15px] opacity-80">Fuera de la consulta, soy colaboradora en un programa de radio sobre psicología, realizo teatro, participo de un taller de literatura y me gusta realizar artesanías.</p>
         <div class="flex flex-wrap gap-y-2 gap-x-6 mt-4 text-sm opacity-80 text-left">
@@ -66,12 +67,12 @@ import {
 
     <hr class={hr} />
 
-    <section id="approach" class="max-w-[1100px] mx-auto py-[51.52px] px-8 scroll-mt-[84px]">
-      <div class="text-center mb-8">
+    <section id="approach" class="max-w-[1100px] mx-auto py-9 md:py-[51.52px] px-4 md:px-8 scroll-mt-[84px]">
+      <div class="text-center mb-6 md:mb-8">
         <div class={kicker}>Mi enfoque</div>
-        <h2 class="font-heading font-semibold text-[32px] leading-[1.12] tracking-[-0.015em] mb-2">Basado en la evidencia. Diseñado para ti.</h2>
+        <h2 class={sectionHeading2}>Basado en la evidencia. Diseñado para ti.</h2>
       </div>
-      <div class="grid grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {pillars.map((pillar) => (
           <div class="flex flex-col gap-2 p-3 rounded-md bg-transparent border border-divider">
             <div class="text-[10px] tracking-widest uppercase text-accent">{pillar.n}</div>
@@ -107,7 +108,7 @@ import {
     <section id="credentials" class={sectionContainer}>
       <div class={kicker}>Formación y credenciales</div>
       <h2 class={sectionHeading}>Una formación en la que puedes confiar.</h2>
-      <div class="grid grid-cols-2 gap-x-8 gap-y-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
         {credentials.map((cred) => (
           <div class={entryCard}>
             <div class="font-heading text-xs text-accent-700 mb-[4px]">{cred.year}</div>
@@ -120,10 +121,10 @@ import {
 
     <hr class={hr} />
 
-    <section id="contact" class="max-w-[900px] mx-auto py-[51.52px] px-8 grid grid-cols-2 gap-8 scroll-mt-[84px]">
+    <section id="contact" class="max-w-[900px] mx-auto py-9 md:py-[51.52px] px-4 md:px-8 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 scroll-mt-[84px]">
       <div>
         <div class={kicker}>Ponte en contacto</div>
-        <h2 class="font-heading font-semibold text-[32px] leading-[1.12] tracking-[-0.015em] mb-2">Dar el primer paso suele ser lo más difícil. Este es solo una conversación.</h2>
+        <h2 class={sectionHeading2}>Dar el primer paso suele ser lo más difícil. Este es solo una conversación.</h2>
         <p class="text-[15px] opacity-80 mt-3">Escríbeme y te responderé a la brevedad para coordinar una consulta.</p>
       </div>
       <form id="contact-form" action="https://formspree.io/f/xpqvkaqe" method="POST" class="flex flex-col gap-3">
@@ -145,7 +146,7 @@ import {
       </form>
     </section>
 
-    <footer class="border-t border-divider py-4 px-8 flex justify-between items-center gap-4 text-[13px] opacity-[0.65]">
+    <footer class="border-t border-divider py-4 px-4 md:px-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-[13px] opacity-[0.65]">
       <div>
         <div>© 2026 Fiorella Ailen Litarelli</div>
         <div>Colegiada M-45324 · Colegio Oficial de la Psicología de Madrid (COPM)</div>

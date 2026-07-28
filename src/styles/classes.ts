@@ -1,11 +1,12 @@
 export const kicker = "font-heading text-xs tracking-[0.12em] uppercase mb-2 text-text/55";
-export const sectionContainer = "max-w-[1000px] mx-auto py-[51.52px] px-8 scroll-mt-[84px]";
-export const sectionHeading = "font-heading font-semibold text-[32px] leading-[1.12] tracking-[-0.015em] mb-6";
+export const sectionContainer = "max-w-[1000px] mx-auto py-9 md:py-[51.52px] px-4 md:px-8 scroll-mt-[84px]";
+export const sectionHeading = "font-heading font-semibold text-[26px] md:text-[32px] leading-[1.12] tracking-[-0.015em] mb-6";
+export const sectionHeading2 = "font-heading font-semibold text-[26px] md:text-[32px] leading-[1.12] tracking-[-0.015em] mb-2";
 export const btnBase = "inline-flex items-center justify-center gap-[6px] cursor-pointer font-heading font-semibold text-sm leading-[1.2] rounded-md py-2 px-[16.56px] border";
 export const btnPrimary = `${btnBase} bg-accent text-white border-accent hover:bg-accent-700 hover:border-accent-700 active:bg-accent-800 active:border-accent-800`;
 export const btnGhost = `${btnBase} border-[1.5px] border-accent-700 text-accent-700 bg-transparent hover:bg-accent-700/8 active:bg-accent-700/16`;
-export const btnPrimaryNav = "inline-flex items-center justify-center gap-[6px] cursor-pointer font-heading font-semibold text-base leading-[1.2] rounded-md py-2 px-[16.56px] border bg-accent text-white border-accent hover:bg-accent-700 hover:border-accent-700 active:bg-accent-800 active:border-accent-800";
-export const btnBaseLg = "inline-flex items-center justify-center gap-[6px] cursor-pointer font-heading font-semibold text-base leading-[1.2] rounded-md py-3 px-6 border flex-1";
+export const btnPrimaryNav = "inline-flex items-center justify-center gap-[6px] cursor-pointer font-heading font-semibold text-sm md:text-base leading-[1.2] rounded-md py-2 px-3 md:px-[16.56px] border bg-accent text-white border-accent hover:bg-accent-700 hover:border-accent-700 active:bg-accent-800 active:border-accent-800";
+export const btnBaseLg = "inline-flex items-center justify-center gap-[6px] cursor-pointer font-heading font-semibold text-base leading-[1.2] rounded-md py-3 px-4 md:px-6 border flex-1";
 export const btnPrimaryLg = `${btnBaseLg} bg-accent text-white border-accent hover:bg-accent-700 hover:border-accent-700 active:bg-accent-800 active:border-accent-800`;
 export const btnGhostLg = `${btnBaseLg} border-[1.5px] border-accent-700 text-accent-700 bg-transparent hover:bg-accent-700/8 active:bg-accent-700/16`;
 export const hr = "h-px border-0 bg-divider my-4 max-w-[1180px] mx-auto";
