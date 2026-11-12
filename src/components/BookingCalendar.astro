@@ -1,0 +1,267 @@
+---
+import { calNavBtn } from "../styles/classes";
+---
+
+<fieldset id="booking-calendar" class="border border-divider rounded-md p-3 m-0 min-w-0">
+  <legend class="px-1 text-xs text-text/70">Elige día y hora <span class="opacity-75">(hora de Madrid)</span></legend>
+
+  <div class="flex items-center justify-between mb-2">
+    <button type="button" class={calNavBtn} data-cal-prev aria-label="Mes anterior">‹</button>
+    <div class="font-heading font-semibold text-[17px] capitalize" data-cal-title aria-live="polite"></div>
+    <button type="button" class={calNavBtn} data-cal-next aria-label="Mes siguiente">›</button>
+  </div>
+
+  <div class="grid grid-cols-7 gap-1 text-center text-[11px] uppercase tracking-wider text-text/55 mb-1" aria-hidden="true">
+    <div>L</div><div>M</div><div>X</div><div>J</div><div>V</div><div>S</div><div>D</div>
+  </div>
+  <div class="grid grid-cols-7 gap-1" data-cal-days></div>
+
+  <div class="mt-3" data-cal-slots-wrap hidden>
+    <div class="text-xs text-text/70 mb-2 first-letter:uppercase" data-cal-slots-title></div>
+    <div class="grid grid-cols-4 gap-1" data-cal-slots></div>
+  </div>
+
+  <p class="mt-3 mb-0 text-[13px] text-text/70" data-cal-summary>Selecciona un día disponible.</p>
+
+  <input type="hidden" name="fecha" data-cal-date-input />
+  <input type="hidden" name="hora" data-cal-time-input />
+</fieldset>
+
+<script>
+  import { booking } from "../data/booking";
+
+  const DAY_BASE =
+    "h-9 rounded-md text-sm border cursor-pointer transition-colors border-divider hover:border-accent " +
+    "disabled:cursor-not-allowed disabled:border-transparent disabled:opacity-30 disabled:hover:border-transparent " +
+    "aria-pressed:bg-accent aria-pressed:text-white aria-pressed:border-accent";
+  const SLOT_BASE =
+    "py-[6px] rounded-md text-sm border cursor-pointer transition-colors border-divider hover:border-accent " +
+    "disabled:cursor-not-allowed disabled:line-through disabled:opacity-40 disabled:hover:border-divider " +
+    "aria-pressed:bg-accent aria-pressed:text-white aria-pressed:border-accent";
+
+  const root = document.getElementById("booking-calendar");
+
+  if (root) {
+    const q = <T extends Element>(sel: string) => root.querySelector(sel) as T;
+    const titleEl = q<HTMLElement>("[data-cal-title]");
+    const daysEl = q<HTMLElement>("[data-cal-days]");
+    const prevBtn = q<HTMLButtonElement>("[data-cal-prev]");
+    const nextBtn = q<HTMLButtonElement>("[data-cal-next]");
+    const slotsWrap = q<HTMLElement>("[data-cal-slots-wrap]");
+    const slotsTitle = q<HTMLElement>("[data-cal-slots-title]");
+    const slotsEl = q<HTMLElement>("[data-cal-slots]");
+    const summaryEl = q<HTMLElement>("[data-cal-summary]");
+    const dateInput = q<HTMLInputElement>("[data-cal-date-input]");
+    const timeInput = q<HTMLInputElement>("[data-cal-time-input]");
+
+    const fmtMonth = new Intl.DateTimeFormat("es-ES", { month: "long", year: "numeric" });
+    const fmtLong = new Intl.DateTimeFormat("es-ES", { weekday: "long", day: "numeric", month: "long" });
+
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const iso = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const hourLabel = (h: number) => `${pad(h)}:00`;
+
+    // Hash determinista (FNV-1a) → mismo resultado para todos los visitantes y recargas.
+    const hash01 = (s: string) => {
+      let h = 0x811c9dc5;
+      for (let i = 0; i < s.length; i++) {
+        h ^= s.charCodeAt(i);
+        h = Math.imul(h, 0x01000193);
+      }
+      return (h >>> 0) / 0xffffffff;
+    };
+    const isBusy = (dateIso: string, hour: number) => hash01(`${dateIso}-${hour}`) < booking.busyRatio;
+
+    const hours: number[] = [];
+    for (let h = booking.startHour; h < booking.endHour; h++) hours.push(h);
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const firstDay = new Date(today);
+    firstDay.setDate(firstDay.getDate() + booking.minNoticeDays);
+    const lastDay = new Date(today);
+    lastDay.setDate(lastDay.getDate() + booking.daysAhead);
+
+    // Horas realmente reservadas en Google Calendar ("YYYY-MM-DD HH:00").
+    const booked = new Set<string>();
+    const isBooked = (day: Date, hour: number) => booked.has(`${iso(day)} ${hourLabel(hour)}`);
+
+    // Horas libres de un día: quita las reservadas de verdad y, además, algunas simuladas.
+    // Si la simulación dejase el día sin huecos reales, se libera una hora para que siempre haya alguno.
+    const freeHours = (day: Date) => {
+      const key = iso(day);
+      const open = hours.filter((h) => !isBooked(day, h));
+      const free = open.filter((h) => !isBusy(key, h));
+      if (free.length || !open.length) return free;
+      return [open[Math.floor(hash01(key) * open.length) % open.length]];
+    };
+
+    const slotState = (day: Date, hour: number) => (freeHours(day).includes(hour) ? "free" : "busy");
+
+    const dayHasFree = (day: Date) =>
+      day >= firstDay &&
+      day <= lastDay &&
+      booking.workDays.includes(day.getDay()) &&
+      freeHours(day).length > 0;
+
+    const firstMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const lastMonth = new Date(lastDay.getFullYear(), lastDay.getMonth(), 1);
+    let viewMonth = new Date(firstMonth);
+    let selectedDay: Date | null = null;
+    let selectedHour: number | null = null;
+
+    // Si este mes ya no tiene huecos, abrir directamente el siguiente.
+    const monthHasFree = (m: Date) => {
+      const d = new Date(m);
+      while (d.getMonth() === m.getMonth()) {
+        if (dayHasFree(d)) return true;
+        d.setDate(d.getDate() + 1);
+      }
+      return false;
+    };
+    if (!monthHasFree(viewMonth) && lastMonth > firstMonth) viewMonth = new Date(lastMonth);
+
+    const updateSummary = () => {
+      if (selectedDay && selectedHour !== null) {
+        summaryEl.innerHTML = "";
+        const strong = document.createElement("strong");
+        strong.textContent = `${fmtLong.format(selectedDay)} a las ${hourLabel(selectedHour)}`;
+        summaryEl.append("Cita seleccionada: ", strong);
+        dateInput.value = iso(selectedDay);
+        timeInput.value = hourLabel(selectedHour);
+      } else {
+        summaryEl.textContent = selectedDay ? "Ahora elige una hora." : "Selecciona un día disponible.";
+        dateInput.value = selectedDay ? iso(selectedDay) : "";
+        timeInput.value = "";
+      }
+      root.dispatchEvent(new CustomEvent("booking:change"));
+    };
+
+    const renderSlots = () => {
+      slotsEl.innerHTML = "";
+      if (!selectedDay) {
+        slotsWrap.hidden = true;
+        return;
+      }
+      slotsWrap.hidden = false;
+      slotsTitle.textContent = fmtLong.format(selectedDay);
+      const day = selectedDay;
+      for (const h of hours) {
+        const state = slotState(day, h);
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = SLOT_BASE;
+        btn.textContent = hourLabel(h);
+        btn.disabled = state !== "free";
+        btn.setAttribute("aria-pressed", String(selectedHour === h));
+        btn.setAttribute(
+          "aria-label",
+          `${hourLabel(h)}${state === "busy" ? ", ocupado" : ""}`,
+        );
+        if (state === "busy") btn.title = "Ocupado";
+        btn.addEventListener("click", () => {
+          selectedHour = h;
+          renderSlots();
+          updateSummary();
+        });
+        slotsEl.append(btn);
+      }
+    };
+
+    const renderMonth = () => {
+      titleEl.textContent = fmtMonth.format(viewMonth);
+      prevBtn.disabled = viewMonth <= firstMonth;
+      nextBtn.disabled = viewMonth >= lastMonth;
+      daysEl.innerHTML = "";
+
+      const offset = (viewMonth.getDay() + 6) % 7; // lunes = 0
+      for (let i = 0; i < offset; i++) daysEl.append(document.createElement("div"));
+
+      const d = new Date(viewMonth);
+      while (d.getMonth() === viewMonth.getMonth()) {
+        const day = new Date(d);
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = DAY_BASE;
+        btn.textContent = String(day.getDate());
+        const available = dayHasFree(day);
+        btn.disabled = !available;
+        const isSelected = selectedDay !== null && iso(selectedDay) === iso(day);
+        btn.setAttribute("aria-pressed", String(isSelected));
+        btn.setAttribute("aria-label", `${fmtLong.format(day)}${available ? "" : ", sin disponibilidad"}`);
+        btn.addEventListener("click", () => {
+          selectedDay = day;
+          selectedHour = null;
+          renderMonth();
+          renderSlots();
+          updateSummary();
+        });
+        daysEl.append(btn);
+        d.setDate(d.getDate() + 1);
+      }
+    };
+
+    prevBtn.addEventListener("click", () => {
+      viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1);
+      renderMonth();
+    });
+    nextBtn.addEventListener("click", () => {
+      viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1);
+      renderMonth();
+    });
+
+    const renderAll = () => {
+      // Si la selección ha dejado de estar libre (p. ej. otra persona la acaba de pedir), se quita.
+      if (selectedDay && !dayHasFree(selectedDay)) {
+        selectedDay = null;
+        selectedHour = null;
+      } else if (selectedDay && selectedHour !== null && slotState(selectedDay, selectedHour) !== "free") {
+        selectedHour = null;
+      }
+      renderMonth();
+      renderSlots();
+      updateSummary();
+    };
+
+    // Carga las horas reservadas en Google Calendar.
+    const loadAvailability = async () => {
+      if (!booking.apiUrl) return;
+      root.setAttribute("aria-busy", "true");
+      root.classList.add("opacity-60");
+      try {
+        const url = new URL(booking.apiUrl);
+        url.searchParams.set("from", iso(firstDay));
+        url.searchParams.set("to", iso(lastDay));
+        const res = await fetch(url);
+        const data = await res.json();
+        if (Array.isArray(data?.busy)) {
+          booked.clear();
+          for (const k of data.busy) booked.add(String(k));
+        }
+      } catch {
+        // Sin conexión con el servidor: se muestra igualmente; el servidor rechaza horas ya ocupadas.
+      } finally {
+        root.removeAttribute("aria-busy");
+        root.classList.remove("opacity-60");
+        renderAll();
+      }
+    };
+
+    root.addEventListener("booking:reset", () => {
+      selectedDay = null;
+      selectedHour = null;
+      renderAll();
+    });
+
+    // Marca una hora como ocupada (reservada con éxito o pedida por otra persona) y refresca.
+    root.addEventListener("booking:taken", (e) => {
+      const { fecha, hora } = (e as CustomEvent<{ fecha: string; hora: string }>).detail ?? {};
+      if (fecha && hora) booked.add(`${fecha} ${hora}`);
+      renderAll();
+      loadAvailability();
+    });
+
+    renderMonth();
+    loadAvailability();
+  }
+</script>

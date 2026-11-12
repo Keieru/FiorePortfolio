@@ -12,4 +12,6 @@ export const btnGhostLg = `${btnBaseLg} border-[1.5px] border-accent-700 text-ac
 export const hr = "h-px border-0 bg-divider my-4 max-w-[1180px] mx-auto";
 export const entryCard = "border-l border-accent pl-3";
 export const entryTitle = "font-heading font-semibold text-[17px] mb-[2px]";
+export const calNavBtn = "inline-flex items-center justify-center w-8 h-8 rounded-md border border-divider text-text cursor-pointer hover:border-accent hover:text-accent disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-divider disabled:hover:text-text";
+export const checkboxBase = "mt-[3px] w-4 h-4 shrink-0 accent-accent cursor-pointer";
 export const inputBase = "w-full py-[6px] px-[10px] font-body text-sm text-text caret-accent bg-transparent border border-divider rounded-md hover:border-text/45 focus-visible:border-accent focus-visible:outline-offset-0";

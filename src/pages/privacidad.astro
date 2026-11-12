@@ -1,0 +1,60 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { kicker, sectionContainer, sectionHeading } from "../styles/classes";
+
+// TODO: revisar y completar estos datos antes de publicar.
+const controller = {
+  name: "Fiorella Ailen Litarelli",
+  id: "Psicóloga Colegiada M-45324 (COPM)",
+  email: "fiorella14litarelli@gmail.com",
+  location: "Madrid, España",
+};
+const updated = "noviembre de 2026";
+
+const h3 = "font-heading font-semibold text-[20px] mt-6 mb-2";
+---
+
+<Layout title="Política de Privacidad — Fiorella Ailen Litarelli" description="Información sobre el tratamiento de datos personales conforme al RGPD y la LOPDGDD.">
+  <nav class="sticky top-0 z-50 flex items-center py-3 px-4 md:px-8 border-b border-divider bg-bg">
+    <a href="/" class="font-heading font-semibold text-[16px] md:text-[22px] no-underline text-text">Fiorella Ailen Litarelli</a>
+  </nav>
+
+  <main class={`${sectionContainer} text-[15px] leading-[1.75]`}>
+    <div class={kicker}>Información legal</div>
+    <h1 class={sectionHeading}>Política de Privacidad</h1>
+    <p class="text-sm opacity-70">Última actualización: {updated}</p>
+
+    <p>En cumplimiento del Reglamento (UE) 2016/679 General de Protección de Datos (RGPD) y de la Ley Orgánica 3/2018 de Protección de Datos Personales y garantía de los derechos digitales (LOPDGDD), te informo de cómo trato los datos que facilitas a través del formulario de esta web.</p>
+
+    <h2 class={h3}>1. Responsable del tratamiento</h2>
+    <ul class="pl-[1.1em]">
+      <li><strong>Titular:</strong> {controller.name}</li>
+      <li><strong>Profesión:</strong> {controller.id}</li>
+      <li><strong>Correo de contacto:</strong> {controller.email}</li>
+      <li><strong>Ubicación:</strong> {controller.location}</li>
+    </ul>
+
+    <h2 class={h3}>2. Datos que se recogen</h2>
+    <p>Nombre, correo electrónico, día y hora de la cita solicitada y, opcionalmente, el mensaje que quieras escribir. Te pido que <strong>no incluyas información de salud</strong> en el formulario: esos datos se tratarán, en su caso, durante la consulta y con las garantías propias del secreto profesional.</p>
+
+    <h2 class={h3}>3. Finalidad</h2>
+    <p>Responder a tu solicitud, confirmar o reprogramar la cita y mantener la comunicación necesaria para ello. No se elaborarán perfiles ni se enviarán comunicaciones comerciales.</p>
+
+    <h2 class={h3}>4. Base jurídica</h2>
+    <p>Tu consentimiento expreso (art. 6.1.a RGPD), otorgado al marcar la casilla de aceptación. Puedes retirarlo en cualquier momento sin que ello afecte a la licitud del tratamiento previo.</p>
+
+    <h2 class={h3}>5. Conservación</h2>
+    <p>Los datos se conservarán el tiempo necesario para gestionar tu solicitud. Si no se inicia una relación profesional, se suprimirán en un plazo máximo de 12 meses. Si se inicia, se aplicarán los plazos legales de conservación de la documentación clínica.</p>
+
+    <h2 class={h3}>6. Destinatarios y transferencias internacionales</h2>
+    <p>No se cederán datos a terceros salvo obligación legal. Las solicitudes se registran en la agenda (Google Calendar) y el correo (Gmail) de la responsable, servicios prestados por <strong>Google</strong>, que actúa como encargado del tratamiento y puede almacenar datos en servidores fuera del Espacio Económico Europeo, con las garantías del Marco de Privacidad de Datos UE-EE. UU. y/o cláusulas contractuales tipo aprobadas por la Comisión Europea.</p>
+
+    <h2 class={h3}>7. Tus derechos</h2>
+    <p>Puedes ejercer tus derechos de acceso, rectificación, supresión, oposición, limitación del tratamiento y portabilidad escribiendo a {controller.email}, indicando el derecho que deseas ejercer. Si consideras que tus derechos no han sido atendidos, puedes presentar una reclamación ante la <strong>Agencia Española de Protección de Datos</strong> (www.aepd.es).</p>
+
+    <h2 class={h3}>8. Seguridad</h2>
+    <p>Se aplican medidas técnicas y organizativas adecuadas para proteger tus datos frente a pérdida, uso indebido o acceso no autorizado.</p>
+
+    <p class="mt-8"><a href="/#contact" class="text-accent-700 underline">← Volver al formulario</a></p>
+  </main>
+</Layout>

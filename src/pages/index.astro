@@ -14,7 +14,9 @@ import {
   entryCard,
   entryTitle,
   inputBase,
+  checkboxBase,
 } from "../styles/classes";
+import BookingCalendar from "../components/BookingCalendar.astro";
 ---
 
 <Layout
@@ -56,7 +58,7 @@ import {
       </div>
       <div class="text-[16px] leading-[1.85] text-left md:text-justify">
         <p>Psicóloga con orientación cognitivo-conductual, atendiendo personas con acompañamiento psicológico individual a personas con trastornos del estado de ánimo, trastornos de la conducta alimentaria (TCA), TEA y personas adultas mayores. Mi experiencia personal como persona con dislexia complementa mi formación profesional, permitiéndome ofrecer una comprensión cercana y una atención sensible a las necesidades de las personas neurodivergentes.</p>
-        <p class="text-left text-[15px] opacity-80">Fuera de la consulta, soy colaboradora en un programa de radio sobre psicología, realizo teatro, participo de un taller de literatura y me gusta realizar artesanías.</p>
+        <p class="text-justify text-[15px] ">Fuera de la consulta, soy colaboradora en un programa de radio sobre psicología, realizo teatro, participo de un taller de literatura y me gusta realizar artesanías.</p>
         <div class="flex flex-wrap gap-y-2 gap-x-6 mt-4 text-sm opacity-80 text-left">
           <div><strong>Nacionalidad:</strong> Argentina</div>
           <div><strong>Idioma:</strong> Español</div>
@@ -121,28 +123,52 @@ import {
 
     <hr class={hr} />
 
-    <section id="contact" class="max-w-[900px] mx-auto py-9 md:py-[51.52px] px-4 md:px-8 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 scroll-mt-[84px]">
-      <div>
+    <section id="contact" class="max-w-[1000px] mx-auto py-9 md:py-[51.52px] px-4 md:px-8 scroll-mt-[84px]">
+      <div class="mb-6 md:mb-8 max-w-[60ch]">
         <div class={kicker}>Ponte en contacto</div>
         <h2 class={sectionHeading2}>Dar el primer paso suele ser lo más difícil. Este es solo una conversación.</h2>
-        <p class="text-[15px] opacity-80 mt-3">Escríbeme y te responderé a la brevedad para coordinar una consulta.</p>
+        <p class="text-[15px] opacity-80 mt-3">Elige el día y la hora que mejor te vengan y te confirmaré la cita por correo a la brevedad.</p>
+        <p class="text-[13px] opacity-65 mt-2">Sesiones de lunes a viernes, de 10:00 a 18:00 (hora de Madrid).</p>
       </div>
-      <form id="contact-form" action="https://formspree.io/f/xpqvkaqe" method="POST" class="flex flex-col gap-3">
-        <div>
-          <label for="name" class="block text-xs mb-[5px] text-text/70">Tu nombre</label>
-          <input type="text" id="name" name="name" class={inputBase} placeholder="Nombre completo" required />
+      {/*
+        Móvil: una sola columna (nombre, email, calendario, resto). El contenedor de la derecha
+        usa `contents` para que sus hijos se ordenen junto al calendario con `order-*`.
+        Escritorio (md+): calendario a la izquierda y formulario a la derecha.
+      */}
+      <form id="contact-form" class="flex flex-col gap-3 md:grid md:grid-cols-2 md:gap-x-8 md:items-start">
+        <div class="hidden" aria-hidden="true">
+          <label for="website">No rellenes este campo</label>
+          <input type="text" id="website" name="website" tabindex="-1" autocomplete="off" />
         </div>
-        <div>
-          <label for="email" class="block text-xs mb-[5px] text-text/70">Correo electrónico</label>
-          <input type="email" id="email" name="email" class={inputBase} placeholder="tucorreo@ejemplo.com" required />
+        <div class="order-2 min-w-0 md:col-start-1 md:row-start-1">
+          <BookingCalendar />
         </div>
-        <div>
-          <label for="message" class="block text-xs mb-[5px] text-text/70">¿Qué te trae por aquí?</label>
-          <textarea id="message" name="message" rows="4" class={`${inputBase} min-h-[90px] resize-y`} placeholder="Cuéntame un poco..."></textarea>
+        <div class="contents md:flex md:flex-col md:gap-3 md:col-start-2 md:row-start-1">
+          <div class="order-1 flex flex-col gap-3">
+            <div>
+              <label for="name" class="block text-xs mb-[5px] text-text/70">Tu nombre</label>
+              <input type="text" id="name" name="name" class={inputBase} placeholder="Nombre completo" required />
+            </div>
+            <div>
+              <label for="email" class="block text-xs mb-[5px] text-text/70">Correo electrónico</label>
+              <input type="email" id="email" name="email" class={inputBase} placeholder="tucorreo@ejemplo.com" required />
+            </div>
+          </div>
+          <div class="order-3 flex flex-col gap-3">
+            <div>
+              <label for="message" class="block text-xs mb-[5px] text-text/70">¿Qué te trae por aquí? <span class="opacity-75">(opcional)</span></label>
+              <textarea id="message" name="message" rows="4" class={`${inputBase} min-h-[90px] resize-y`} placeholder="Cuéntame un poco, sin entrar en detalles de salud..."></textarea>
+            </div>
+            <label class="flex items-start gap-2 text-[13px] leading-[1.5] cursor-pointer">
+              <input type="checkbox" id="privacy" name="acepta_privacidad" value="sí" class={checkboxBase} required />
+              <span>He leído y acepto la <a href="/privacidad" target="_blank" rel="noopener" class="text-accent-700 underline">Política de Privacidad</a> y consiento el tratamiento de mis datos para gestionar mi solicitud de cita.</span>
+            </label>
+            <div id="booking-error" class="text-[13px] text-[#b3261e]" hidden>Elige un día y una hora para tu cita.</div>
+            <button type="submit" class={`${btnPrimary} w-full mt-2 disabled:opacity-[0.45] disabled:cursor-not-allowed`}>Solicitar cita</button>
+            <div id="contact-success" class="text-[13px] text-accent-700 hidden">Solicitud enviada — te confirmaré la cita por correo.</div>
+            <div id="contact-error" class="text-[13px] text-[#b3261e] hidden" role="alert"></div>
+          </div>
         </div>
-        <button type="submit" class={`${btnPrimary} w-full mt-2 disabled:opacity-[0.45] disabled:cursor-not-allowed`}>Enviar mensaje</button>
-        <div id="contact-success" class="text-[13px] text-accent-700 hidden">Gracias — me pondré en contacto pronto.</div>
-        <div id="contact-error" class="text-[13px] text-[#b3261e] hidden">No se pudo enviar el mensaje. Inténtalo de nuevo.</div>
       </form>
     </section>
 
@@ -150,6 +176,7 @@ import {
       <div>
         <div>© 2026 Fiorella Ailen Litarelli</div>
         <div>Colegiada M-45324 · Colegio Oficial de la Psicología de Madrid (COPM)</div>
+        <a href="/privacidad" class="text-text underline">Política de Privacidad</a>
       </div>
       <div class="flex items-center gap-2">
         <span class="text-[11px] text-right max-w-[110px]">Escanea para verificar el perfil de Fiorella colegio Madrid</span>
@@ -160,9 +187,30 @@ import {
   </div>
 
   <script>
+    import { booking } from "../data/booking";
+
     const form = document.getElementById("contact-form");
     const success = document.getElementById("contact-success");
     const error = document.getElementById("contact-error");
+    const bookingError = document.getElementById("booking-error");
+    const calendar = document.getElementById("booking-calendar");
+
+    const MESSAGES = {
+      generic: "No se pudo enviar la solicitud. Inténtalo de nuevo o escríbeme por correo.",
+      taken: "Lo siento, alguien acaba de solicitar esa hora. Elige otra, por favor.",
+      invalid: "Revisa los datos del formulario: alguno no es válido.",
+      rate_limited: "Ya he recibido una solicitud tuya recientemente. Te responderé pronto; si necesitas cambiarla, escríbeme por correo.",
+    };
+
+    const showError = (msg: string) => {
+      if (!error) return;
+      error.textContent = msg;
+      error.style.display = "block";
+    };
+
+    calendar?.addEventListener("booking:change", () => {
+      if (bookingError) bookingError.hidden = true;
+    });
 
     if (form instanceof HTMLFormElement) {
       const submitButton = form.querySelector('button[type="submit"]');
@@ -171,23 +219,47 @@ import {
         e.preventDefault();
         if (success) success.style.display = "none";
         if (error) error.style.display = "none";
+
+        const data = Object.fromEntries(new FormData(form)) as Record<string, string>;
+        if (!data.fecha || !data.hora) {
+          if (bookingError) bookingError.hidden = false;
+          calendar?.scrollIntoView({ behavior: "smooth", block: "center" });
+          return;
+        }
+        if (!booking.apiUrl) {
+          showError(MESSAGES.generic);
+          return;
+        }
         if (submitButton instanceof HTMLButtonElement) submitButton.disabled = true;
 
         try {
-          const response = await fetch(form.action, {
+          // text/plain evita la petición previa CORS que Apps Script no admite.
+          const response = await fetch(booking.apiUrl, {
             method: "POST",
-            body: new FormData(form),
-            headers: { Accept: "application/json" },
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify(data),
           });
+          const result = await response.json().catch(() => ({}));
+          const slot = { fecha: data.fecha, hora: data.hora };
 
-          if (response.ok) {
+          if (result.ok) {
             if (success) success.style.display = "block";
             form.reset();
-          } else if (error) {
-            error.style.display = "block";
+            calendar?.dispatchEvent(new CustomEvent("booking:reset"));
+            calendar?.dispatchEvent(new CustomEvent("booking:taken", { detail: slot }));
+          } else if (result.error === "taken") {
+            showError(MESSAGES.taken);
+            calendar?.dispatchEvent(new CustomEvent("booking:taken", { detail: slot }));
+            calendar?.scrollIntoView({ behavior: "smooth", block: "center" });
+          } else {
+            showError(
+              result.error === "invalid" ? MESSAGES.invalid
+              : result.error === "rate_limited" ? MESSAGES.rate_limited
+              : MESSAGES.generic,
+            );
           }
         } catch {
-          if (error) error.style.display = "block";
+          showError(MESSAGES.generic);
         } finally {
           if (submitButton instanceof HTMLButtonElement) submitButton.disabled = false;
         }

@@ -26,7 +26,7 @@ The site runs at `http://localhost:4321`.
 ```text
 /
 ├── public/
-│   └── images/            # Photos, Formspree/QR assets
+│   └── images/            # Photos, QR assets
 └── src/
     ├── data/
     │   └── profile.ts     # Content: pillars, credentials, experience
@@ -43,4 +43,4 @@ Page content (data) and reusable Tailwind class strings are kept out of `index.a
 
 ## Contact form
 
-The contact form posts to [Formspree](https://formspree.io) via `fetch`; see the `<script>` block at the bottom of `src/pages/index.astro`.
+The booking form posts to a Google Apps Script web app (Google Calendar + Gmail) via `fetch`; see `apps-script/README.md` and the `<script>` block at the bottom of `src/pages/index.astro`.
