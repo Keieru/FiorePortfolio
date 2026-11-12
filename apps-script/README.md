@@ -17,10 +17,19 @@ Cualquier evento de tu calendario que coincida con una hora (también los person
 
 ## Uso diario
 
-- Nueva solicitud → evento **"⏳ Pendiente — Nombre"** en tu calendario + correo de aviso. La persona recibe un acuse de recibo.
-- **Confirmar:** cambia el título del evento (p. ej. "Sesión — Nombre").
-- **Rechazar o liberar la hora:** borra el evento.
-- **Bloquear horas o días** (vacaciones, médicos…): crea un evento en tu calendario.
+Cada solicitud bloquea la hora en tu calendario como evento amarillo **"⏳ Pendiente — Nombre"** y te llega un correo con:
+
+- **✅ Confirmar cita**: abre una página donde pulsas *Confirmar*. El evento pasa a verde, **"✅ Sesión — Nombre"**, y la persona recibe un correo con la cita y un archivo `.ics` / enlace para añadirla a su calendario.
+- **❌ Rechazar y liberar**: abre una página donde pulsas *Rechazar*. Se borra el evento, la hora vuelve a estar libre en la web y la persona recibe un aviso para elegir otra.
+- **📅 Ver en Google Calendar**: abre el evento.
+
+Los botones llevan una firma secreta: nadie puede confirmar ni borrar citas cambiando la URL. Ese secreto se genera solo la primera vez y se guarda en *Configuración del proyecto → Propiedades del script* (`LINK_SECRET`); si lo borras, los enlaces de correos antiguos dejan de funcionar.
+
+La página intermedia con botón existe porque algunos antivirus de correo abren los enlaces automáticamente: así nunca se confirma ni se borra nada sin tu clic.
+
+También puedes seguir gestionando a mano en Google Calendar (borrar un evento libera la hora). Para **bloquear horas o días** (vacaciones, médico…), crea un evento en tu calendario.
+
+Opcional: pon la URL de tu web en `siteUrl` dentro de `CONFIG` para que aparezca en el correo de rechazo.
 
 ## Si cambias el código
 

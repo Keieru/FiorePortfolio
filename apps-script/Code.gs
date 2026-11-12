@@ -17,6 +17,9 @@ const CONFIG = {
   /** Enviar un acuse de recibo a la persona que solicita la cita. */
   sendAck: true,
   eventTitlePrefix: "⏳ Pendiente — ",
+  confirmedTitlePrefix: "✅ Sesión — ",
+  /** URL de la web (se usa en el correo de rechazo para que la persona elija otra hora). */
+  siteUrl: "",
   /** Límite anti-abuso: solicitudes totales aceptadas por hora. */
   maxRequestsPerHour: 10,
   /** Límite anti-abuso: solicitudes por correo electrónico cada 24 h. */
@@ -66,10 +69,188 @@ function overlaps_(events, start, end) {
   });
 }
 
-// ---------- GET: horas ocupadas ----------
+function esc_(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function slotLabel_(start) {
+  return Utilities.formatDate(start, CONFIG.timeZone, "dd/MM/yyyy 'a las' HH:mm");
+}
+
+// ---------- Firma de los enlaces Confirmar / Rechazar ----------
+
+/** Secreto aleatorio guardado en las propiedades del script (no está en el código). */
+function secret_() {
+  const props = PropertiesService.getScriptProperties();
+  let s = props.getProperty("LINK_SECRET");
+  if (!s) {
+    s = Utilities.getUuid() + Utilities.getUuid();
+    props.setProperty("LINK_SECRET", s);
+  }
+  return s;
+}
+
+function sign_(action, id) {
+  const bytes = Utilities.computeHmacSha256Signature(action + ":" + id, secret_());
+  return Utilities.base64EncodeWebSafe(bytes).replace(/=+$/, "");
+}
+
+function verify_(action, id, sig) {
+  const expected = sign_(action, id);
+  const given = String(sig || "");
+  if (given.length !== expected.length) return false;
+  let diff = 0;
+  for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ given.charCodeAt(i);
+  return diff === 0;
+}
+
+function actionUrl_(action, id) {
+  return (
+    ScriptApp.getService().getUrl() +
+    "?action=" + action +
+    "&id=" + encodeURIComponent(id) +
+    "&sig=" + sign_(action, id)
+  );
+}
+
+function calendarEventUrl_(event) {
+  const eid = Utilities.base64Encode(event.getId().split("@")[0] + " " + calendar_().getId()).replace(/=+$/, "");
+  return "https://calendar.google.com/calendar/event?eid=" + eid;
+}
+
+/** Evento pendiente válido para una acción firmada, o null. */
+function pendingEvent_(action, id, sig) {
+  if ((action !== "confirm" && action !== "reject") || !id || !verify_(action, id, sig)) return null;
+  const event = calendar_().getEventById(id);
+  if (!event || event.getTag("status") !== "pending") return null;
+  return event;
+}
+
+// ---------- Página de confirmación (desde el correo de Fiorella) ----------
+
+function page_(title, bodyHtml) {
+  const html =
+    '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
+    "<style>body{font-family:Georgia,serif;background:#f3f2f2;color:#201f1d;margin:0;padding:32px 16px}" +
+    ".card{max-width:460px;margin:0 auto;background:#fff;border:1px solid #ddd;border-radius:6px;padding:24px}" +
+    "h1{font-size:22px;margin:0 0 12px}p{line-height:1.6}" +
+    "button{font:inherit;font-weight:600;border:0;border-radius:4px;padding:12px 18px;color:#fff;cursor:pointer;width:100%}" +
+    ".ok{background:#2e7d32}.no{background:#b3261e}button:disabled{opacity:.5}</style></head><body><div class=\"card\">" +
+    "<h1>" + esc_(title) + "</h1>" + bodyHtml + "</div></body></html>";
+  return HtmlService.createHtmlOutput(html).setTitle(title);
+}
+
+function actionPage_(p) {
+  const event = pendingEvent_(p.action, p.id, p.sig);
+  if (!event) {
+    return page_("Solicitud ya gestionada", "<p>Este enlace no es válido o la cita ya fue confirmada, rechazada o eliminada.</p>");
+  }
+  const confirm = p.action === "confirm";
+  const info =
+    "<p><strong>" + esc_(event.getTag("name")) + "</strong> (" + esc_(event.getTag("email")) + ")<br>" +
+    esc_(slotLabel_(event.getStartTime())) + " (hora de Madrid)</p>";
+  const button =
+    '<button id="b" class="' + (confirm ? "ok" : "no") + '">' +
+    (confirm ? "Confirmar cita" : "Rechazar y liberar la hora") + "</button>" +
+    '<p id="r"></p>' +
+    "<script>document.getElementById('b').onclick=function(){var b=this;b.disabled=true;b.textContent='Procesando…';" +
+    "google.script.run.withSuccessHandler(function(m){b.remove();document.getElementById('r').textContent=m;})" +
+    ".withFailureHandler(function(){b.disabled=false;b.textContent='Reintentar';document.getElementById('r').textContent='No se pudo completar.';})" +
+    ".applyAction(" + JSON.stringify(p.action) + "," + JSON.stringify(p.id) + "," + JSON.stringify(p.sig) + ");};</script>";
+  return page_(confirm ? "¿Confirmar esta cita?" : "¿Rechazar esta cita?", info + button);
+}
+
+/** Llamada desde la página de confirmación. Solo actúa con una firma válida. */
+function applyAction(action, id, sig) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    const event = pendingEvent_(action, id, sig);
+    if (!event) return "Esta solicitud ya fue gestionada.";
+
+    const name = event.getTag("name");
+    const email = event.getTag("email");
+    const start = event.getStartTime();
+    const end = event.getEndTime();
+    const label = slotLabel_(start);
+
+    if (action === "confirm") {
+      event.setTitle(CONFIG.confirmedTitlePrefix + name);
+      event.setColor(CalendarApp.EventColor.GREEN);
+      event.setTag("status", "confirmed");
+      sendConfirmation_(email, start, end, label);
+      return "Cita confirmada. " + name + " ha recibido un correo con la invitación.";
+    }
+
+    event.deleteEvent();
+    sendRejection_(email, label);
+    return "Cita rechazada. La hora vuelve a estar libre y " + name + " ha recibido un aviso.";
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// ---------- Correos a la persona que solicita ----------
+// No incluyen texto escrito en el formulario, para que nadie pueda usarlos para enviar mensajes a terceros.
+
+const SIGNATURE_ = "\n\nFiorella Ailen Litarelli\nPsicóloga Colegiada M-45324";
+
+function icsDate_(d) {
+  return Utilities.formatDate(d, "UTC", "yyyyMMdd'T'HHmmss'Z'");
+}
+
+function sendConfirmation_(email, start, end, label) {
+  const title = "Sesión con Fiorella Ailen Litarelli";
+  const ics = [
+    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Fiorella Ailen Litarelli//Citas//ES", "METHOD:PUBLISH",
+    "BEGIN:VEVENT",
+    "UID:" + Utilities.getUuid() + "@citas",
+    "DTSTAMP:" + icsDate_(new Date()),
+    "DTSTART:" + icsDate_(start),
+    "DTEND:" + icsDate_(end),
+    "SUMMARY:" + title,
+    "END:VEVENT", "END:VCALENDAR",
+  ].join("\r\n");
+  const gcal =
+    "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + encodeURIComponent(title) +
+    "&dates=" + icsDate_(start) + "/" + icsDate_(end) + "&ctz=" + encodeURIComponent(CONFIG.timeZone);
+
+  MailApp.sendEmail({
+    to: email,
+    name: "Fiorella Ailen Litarelli",
+    replyTo: CONFIG.notifyEmail || Session.getEffectiveUser().getEmail(),
+    subject: "Cita confirmada: " + label,
+    body:
+      "Hola,\n\nTu cita queda confirmada para el " + label + " (hora de Madrid).\n\n" +
+      "Añádela a tu calendario con el archivo adjunto o desde este enlace:\n" + gcal +
+      "\n\nSi necesitas cambiarla, responde a este correo." + SIGNATURE_,
+    attachments: [Utilities.newBlob(ics, "text/calendar", "cita.ics")],
+  });
+}
+
+function sendRejection_(email, label) {
+  MailApp.sendEmail({
+    to: email,
+    name: "Fiorella Ailen Litarelli",
+    replyTo: CONFIG.notifyEmail || Session.getEffectiveUser().getEmail(),
+    subject: "Sobre tu solicitud de cita",
+    body:
+      "Hola,\n\nLo siento, no puedo atenderte el " + label + ". " +
+      (CONFIG.siteUrl ? "Puedes elegir otra hora aquí: " + CONFIG.siteUrl + "\n\n" : "Puedes solicitar otra hora desde la web.\n\n") +
+      "Si lo prefieres, responde a este correo y buscamos otro hueco." + SIGNATURE_,
+  });
+}
+
+// ---------- GET: horas ocupadas (o página de confirmación si lleva ?action=) ----------
 
 function doGet(e) {
   const p = (e && e.parameter) || {};
+  if (p.action) return actionPage_(p);
   const today = today_();
   let from = parseDay_(p.from) || today;
   let to = parseDay_(p.to) || addDays_(today, CONFIG.daysAhead);
@@ -144,6 +325,7 @@ function doPost(e) {
     return json_({ ok: false, error: "busy_server" });
   }
 
+  let event;
   try {
     // Límites anti-abuso (dentro del bloqueo para que los contadores sean exactos).
     const cache = CacheService.getScriptCache();
@@ -159,15 +341,19 @@ function doPost(e) {
     if (overlaps_(cal.getEvents(start, end), start, end)) {
       return json_({ ok: false, error: "taken" });
     }
-    cal.createEvent(CONFIG.eventTitlePrefix + name, start, end, {
+    event = cal.createEvent(CONFIG.eventTitlePrefix + name, start, end, {
       description:
         "Solicitud desde la web\n\n" +
         "Nombre: " + name + "\n" +
         "Email: " + email + "\n" +
         "Mensaje: " + (message || "(sin mensaje)") + "\n\n" +
         "Consentimiento RGPD: sí (" + new Date().toISOString() + ")\n\n" +
-        "Para confirmar, cambia el título. Para liberar la hora, borra el evento.",
+        "Confirma o rechaza desde los botones del correo de aviso.",
     });
+    event.setTag("status", "pending");
+    event.setTag("name", name);
+    event.setTag("email", email);
+    event.setColor(CalendarApp.EventColor.YELLOW);
     cache.put(hourKey, String(hourCount + 1), 3600);
     cache.put(emailKey, String(emailCount + 1), 86400);
   } finally {
@@ -176,6 +362,16 @@ function doPost(e) {
 
   try {
     const notify = CONFIG.notifyEmail || Session.getEffectiveUser().getEmail();
+    const id = event.getId();
+    const confirmUrl = actionUrl_("confirm", id);
+    const rejectUrl = actionUrl_("reject", id);
+    const calUrl = calendarEventUrl_(event);
+    const btn = function (href, bg, text) {
+      return (
+        '<a href="' + esc_(href) + '" style="display:inline-block;margin:4px 6px 4px 0;padding:12px 18px;border-radius:4px;' +
+        "background:" + bg + ';color:#ffffff;text-decoration:none;font-weight:600;font-family:Arial,sans-serif">' + text + "</a>"
+      );
+    };
     MailApp.sendEmail({
       to: notify,
       replyTo: email,
@@ -183,7 +379,22 @@ function doPost(e) {
       body:
         "Nombre: " + name + "\nEmail: " + email + "\nCita: " + label + " (hora de Madrid)\n\n" +
         "Mensaje:\n" + (message || "(sin mensaje)") + "\n\n" +
-        "La hora ha quedado bloqueada como pendiente en tu Google Calendar.",
+        "Confirmar: " + confirmUrl + "\nRechazar: " + rejectUrl + "\nVer en Google Calendar: " + calUrl,
+      htmlBody:
+        '<div style="font-family:Georgia,serif;color:#201f1d;max-width:520px">' +
+        '<h2 style="margin:0 0 12px">Nueva solicitud de cita</h2>' +
+        "<p style=\"margin:0 0 4px\"><strong>" + esc_(label) + "</strong> (hora de Madrid)</p>" +
+        "<p style=\"margin:0 0 4px\">" + esc_(name) + " · " + esc_(email) + "</p>" +
+        '<p style="margin:12px 0;padding:10px;background:#f3f2f2;border-radius:4px;white-space:pre-wrap">' +
+        esc_(message || "(sin mensaje)") + "</p>" +
+        "<p>" +
+        btn(confirmUrl, "#2e7d32", "✅ Confirmar cita") +
+        btn(rejectUrl, "#b3261e", "❌ Rechazar y liberar") +
+        "</p>" +
+        '<p><a href="' + esc_(calUrl) + '" style="color:#7d5411">📅 Ver en Google Calendar</a></p>' +
+        '<p style="font-size:12px;color:#777">La hora ya está bloqueada como pendiente. ' +
+        "Al confirmar, la persona recibe un correo con la cita para añadirla a su calendario; al rechazar, la hora vuelve a quedar libre en la web.</p>" +
+        "</div>",
     });
     if (CONFIG.sendAck) {
       MailApp.sendEmail({
